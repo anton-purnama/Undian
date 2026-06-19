@@ -478,6 +478,37 @@
         outline: none;
         border-color: var(--teal);
       }
+      .field select {
+        width: 100%;
+        padding: 13px 36px 13px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--panel-line);
+        background: rgba(0, 0, 0, 0.3)
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239a9ab4' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+          no-repeat right 14px center;
+        color: var(--text);
+        font-size: 16px;
+        font-family: inherit;
+        appearance: none;
+        -webkit-appearance: none;
+        cursor: pointer;
+      }
+      .field select:focus {
+        outline: none;
+        border-color: var(--teal);
+      }
+      .field select option {
+        background: #1b1c30;
+        color: var(--text);
+      }
+      .field-section {
+        margin: 18px 0 10px;
+        font-size: 11px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--gold);
+        font-weight: 700;
+      }
       .err {
         color: var(--magenta);
         font-size: 13px;
@@ -639,7 +670,8 @@
         aria-labelledby="modalTitle"
       >
         <h3 id="modalTitle">Pengaturan</h3>
-        <p class="sub">Menyimpan akan mengosongkan daftar pemenang.</p>
+        <p class="sub">Mengubah angka atau durasi akan mereset pemenang.</p>
+        <p class="field-section">Permainan</p>
         <div class="field">
           <label for="minInput">Angka minimum</label>
           <input type="number" id="minInput" inputmode="numeric" />
@@ -657,6 +689,25 @@
             step="1"
             min="1"
           />
+        </div>
+        <p class="field-section">Musik</p>
+        <div class="field">
+          <label for="musicDrawSelect">Musik saat mengundi</label>
+          <select id="musicDrawSelect">
+            <option value="both">Drum + Suspense</option>
+            <option value="drum">Drum Beat</option>
+            <option value="suspense">Suspense</option>
+            <option value="none">Tanpa musik</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="musicWinSelect">Musik saat menang</label>
+          <select id="musicWinSelect">
+            <option value="drumroll">Drum Roll + Ding</option>
+            <option value="ding">Ding</option>
+            <option value="fanfare">Fanfare</option>
+            <option value="none">Tanpa musik</option>
+          </select>
         </div>
         <p class="err" id="settingsErr"></p>
         <div class="modal-actions">
@@ -680,6 +731,8 @@
         winners: [], // angka pemenang berurutan
         drawing: false,
         muted: false,
+        musicDraw: "both", // 'drum' | 'suspense' | 'both' | 'none'
+        musicWin: "drumroll", // 'ding' | 'fanfare' | 'drumroll' | 'none'
       };
 
       /* ---------- Elements ---------- */
@@ -702,6 +755,8 @@
         saveSettings: document.getElementById("saveSettings"),
         cancelSettings: document.getElementById("cancelSettings"),
         confetti: document.getElementById("confetti"),
+        musicDrawSelect: document.getElementById("musicDrawSelect"),
+        musicWinSelect: document.getElementById("musicWinSelect"),
         root: document.documentElement,
       };
 
@@ -798,7 +853,10 @@
         const start = performance.now();
         let lastFlip = 0;
 
-        startSuspense(durationMs);
+        if (state.musicDraw === "suspense" || state.musicDraw === "both")
+          startSuspense(durationMs);
+        if (state.musicDraw === "drum" || state.musicDraw === "both")
+          startDrumBeat(durationMs);
 
         function frame(now) {
           const elapsed = now - start;
@@ -838,6 +896,7 @@
       function finishDraw(winner, winIdx) {
         cancelAnimationFrame(rafId);
         stopSuspense();
+        stopDrumBeat();
 
         // kunci angka pemenang
         el.number.textContent = winner;
@@ -857,7 +916,9 @@
         renderWinners();
         updateStartState();
 
-        playWinDing();
+        if (state.musicWin === "ding") playWinDing();
+        else if (state.musicWin === "fanfare") playFanfare();
+        else if (state.musicWin === "drumroll") playDrumRollDing();
         burstConfetti();
       }
 
@@ -992,6 +1053,115 @@
         suspense = null;
       }
 
+      /* =========================================================
+   DRUM BEAT — Web Audio API
+   ========================================================= */
+      let drumBeat = null;
+      let drumBeatStart = 0;
+      let drumBeatDuration = 0;
+
+      function playKick(t) {
+        const osc = actx.createOscillator();
+        const g = actx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(130, t);
+        osc.frequency.exponentialRampToValueAtTime(35, t + 0.35);
+        g.gain.setValueAtTime(1.1, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+        osc.connect(g);
+        g.connect(masterGain);
+        osc.start(t);
+        osc.stop(t + 0.42);
+      }
+
+      function playSnare(t, vol) {
+        vol = vol || 0.65;
+        const bufLen = Math.round(actx.sampleRate * 0.18);
+        const buf = actx.createBuffer(1, bufLen, actx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
+        const src = actx.createBufferSource();
+        src.buffer = buf;
+        const flt = actx.createBiquadFilter();
+        flt.type = "bandpass";
+        flt.frequency.value = 900;
+        flt.Q.value = 0.9;
+        const g = actx.createGain();
+        g.gain.setValueAtTime(vol, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+        src.connect(flt);
+        flt.connect(g);
+        g.connect(masterGain);
+        src.start(t);
+        src.stop(t + 0.2);
+      }
+
+      function playHihat(t, vol) {
+        vol = vol || 0.1;
+        const bufLen = Math.round(actx.sampleRate * 0.04);
+        const buf = actx.createBuffer(1, bufLen, actx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
+        const src = actx.createBufferSource();
+        src.buffer = buf;
+        const flt = actx.createBiquadFilter();
+        flt.type = "highpass";
+        flt.frequency.value = 8000;
+        const g = actx.createGain();
+        g.gain.setValueAtTime(vol, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+        src.connect(flt);
+        flt.connect(g);
+        g.connect(masterGain);
+        src.start(t);
+        src.stop(t + 0.05);
+      }
+
+      function scheduleNextDrum() {
+        if (!drumBeat || !actx) return;
+        const progress = Math.min(
+          (performance.now() - drumBeatStart) / drumBeatDuration,
+          1,
+        );
+        // BPM accelerates 80→160 together with the animation
+        const bpm = 80 + progress * 80;
+        const eighthMs = 60000 / bpm / 2;
+        const t = actx.currentTime;
+        // 8 eighth-note pattern: K.S.K.S. with hi-hats on all
+        const beat = drumBeat.count % 8;
+        if (beat === 0) {
+          playKick(t);
+          playHihat(t, 0.12);
+        } else if (beat === 2) {
+          playSnare(t);
+          playHihat(t, 0.12);
+        } else if (beat === 4) {
+          playKick(t);
+          playHihat(t, 0.12);
+        } else if (beat === 6) {
+          playSnare(t);
+          playHihat(t, 0.12);
+        } else {
+          playHihat(t, 0.08);
+        }
+        drumBeat.count++;
+        drumBeat.timer = setTimeout(scheduleNextDrum, eighthMs);
+      }
+
+      function startDrumBeat(durationMs) {
+        if (!actx) return;
+        drumBeat = { timer: null, count: 0 };
+        drumBeatStart = performance.now();
+        drumBeatDuration = durationMs;
+        scheduleNextDrum();
+      }
+
+      function stopDrumBeat() {
+        if (!drumBeat) return;
+        clearTimeout(drumBeat.timer);
+        drumBeat = null;
+      }
+
       function playWinDing() {
         if (!actx) return;
         const base = actx.currentTime + 0.04;
@@ -1023,6 +1193,67 @@
         sg.connect(masterGain);
         sh.start(t);
         sh.stop(t + 1.25);
+      }
+
+      function playFanfare() {
+        if (!actx) return;
+        const base = actx.currentTime + 0.04;
+        // Ascending triumphant: G4 C5 E5 G5 C6
+        const notes = [392, 523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((f, i) => {
+          const t = base + i * 0.1;
+          const osc = actx.createOscillator();
+          const g = actx.createGain();
+          osc.type = "square";
+          osc.frequency.setValueAtTime(f, t);
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(0.14, t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+          osc.connect(g);
+          g.connect(masterGain);
+          osc.start(t);
+          osc.stop(t + 0.95);
+        });
+        // High sparkle
+        const ts = base + 0.5;
+        const sh = actx.createOscillator();
+        const sg = actx.createGain();
+        sh.type = "sine";
+        sh.frequency.setValueAtTime(1567.98, ts);
+        sg.gain.setValueAtTime(0.0001, ts);
+        sg.gain.exponentialRampToValueAtTime(0.1, ts + 0.02);
+        sg.gain.exponentialRampToValueAtTime(0.0001, ts + 1.0);
+        sh.connect(sg);
+        sg.connect(masterGain);
+        sh.start(ts);
+        sh.stop(ts + 1.05);
+      }
+
+      function playDrumRollDing() {
+        if (!actx) return;
+        const base = actx.currentTime + 0.04;
+        // Snare roll: 8 hits over 0.56s
+        for (let i = 0; i < 8; i++) {
+          playSnare(base + i * 0.07, 0.45 + i * 0.04);
+        }
+        // Kick crash at the end
+        playKick(base + 0.6);
+        // Then the ding chord
+        const notes = [523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((f, i) => {
+          const t = base + 0.7 + i * 0.085;
+          const osc = actx.createOscillator();
+          const g = actx.createGain();
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(f, t);
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(0.22, t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
+          osc.connect(g);
+          g.connect(masterGain);
+          osc.start(t);
+          osc.stop(t + 1.05);
+        });
       }
 
       /* =========================================================
@@ -1064,6 +1295,8 @@
         el.minInput.value = state.min;
         el.maxInput.value = state.max;
         el.durInput.value = state.durationSec;
+        el.musicDrawSelect.value = state.musicDraw;
+        el.musicWinSelect.value = state.musicWin;
         el.settingsErr.textContent = "";
         el.overlay.classList.add("show");
         el.minInput.focus();
@@ -1076,6 +1309,8 @@
         const min = parseInt(el.minInput.value, 10);
         const max = parseInt(el.maxInput.value, 10);
         const dur = parseFloat(el.durInput.value);
+        const musicDraw = el.musicDrawSelect.value;
+        const musicWin = el.musicWinSelect.value;
 
         if (!Number.isFinite(min) || !Number.isFinite(max)) {
           el.settingsErr.textContent =
@@ -1092,21 +1327,31 @@
           return;
         }
 
+        const gameChanged =
+          min !== state.min || max !== state.max || dur !== state.durationSec;
+
         // jika sedang mengundi, hentikan dulu
         if (state.drawing) {
           cancelAnimationFrame(rafId);
           stopSuspense();
+          stopDrumBeat();
           state.drawing = false;
-
           el.root.style.setProperty("--glow", "0");
           el.root.style.setProperty("--ring-speed", "6s");
         }
 
-        state.min = min;
-        state.max = max;
-        state.durationSec = dur;
-        closeSettings();
-        resetAll(); // simpan -> daftar pemenang ikut di-reset
+        state.musicDraw = musicDraw;
+        state.musicWin = musicWin;
+
+        if (gameChanged) {
+          state.min = min;
+          state.max = max;
+          state.durationSec = dur;
+          closeSettings();
+          resetAll(); // reset pemenang hanya jika angka/durasi berubah
+        } else {
+          closeSettings();
+        }
       }
 
       /* =========================================================
@@ -1117,8 +1362,8 @@
         if (state.drawing) {
           cancelAnimationFrame(rafId);
           stopSuspense();
+          stopDrumBeat();
           state.drawing = false;
-
           el.root.style.setProperty("--glow", "0");
           el.root.style.setProperty("--ring-speed", "6s");
         }
