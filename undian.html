@@ -254,30 +254,6 @@
         color: var(--muted);
       }
 
-      /* countdown badge */
-      .countdown {
-        position: absolute;
-        top: -6px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 7px 16px;
-        border-radius: 999px;
-        background: rgba(54, 227, 201, 0.14);
-        border: 1px solid rgba(54, 227, 201, 0.5);
-        color: var(--teal);
-        font-weight: 700;
-        font-size: 14px;
-        letter-spacing: 0.06em;
-        font-variant-numeric: tabular-nums;
-        opacity: 0;
-        transition: opacity 0.2s ease;
-        pointer-events: none;
-        white-space: nowrap;
-      }
-      .countdown.show {
-        opacity: 1;
-      }
-
       .status {
         color: var(--muted);
         font-size: 15px;
@@ -630,7 +606,6 @@
       <div class="stage-wrap">
         <div class="ring" aria-hidden="true"></div>
         <div class="halo" aria-hidden="true"></div>
-        <div class="countdown" id="countdown" aria-hidden="true"></div>
         <div class="stage" id="stage">
           <div class="number dash" id="number" aria-live="polite">—</div>
           <div class="stage-label" id="stageLabel">Siap diundi</div>
@@ -712,7 +687,6 @@
         number: document.getElementById("number"),
         stage: document.getElementById("stage"),
         stageLabel: document.getElementById("stageLabel"),
-        countdown: document.getElementById("countdown"),
         status: document.getElementById("status"),
         startBtn: document.getElementById("startBtn"),
         resetBtn: document.getElementById("resetBtn"),
@@ -815,7 +789,6 @@
         el.number.classList.remove("dash");
         el.stageLabel.textContent = "Mengundi";
         setStatus("Bersiap… siapa yang beruntung?", false);
-        el.countdown.classList.add("show");
 
         // tentukan pemenang lebih dulu dari kolam yang tersisa
         const winIdx = Math.floor(Math.random() * state.available.length);
@@ -838,10 +811,6 @@
             "--glow",
             (prefersReduced ? progress * 0.4 : progress).toFixed(3),
           );
-
-          // countdown kecil
-          const remain = Math.max(0, Math.ceil((durationMs - elapsed) / 1000));
-          el.countdown.textContent = remain + " dtk";
 
           // interval flip: cepat di awal (45ms), melambat di akhir (220ms) untuk efek "mendarat"
           const flipInterval = 45 + progress * progress * 175;
@@ -877,7 +846,6 @@
 
         el.stage.classList.add("win");
         el.stageLabel.textContent = "Pemenang";
-        el.countdown.classList.remove("show");
         el.root.style.setProperty("--ring-speed", "6s");
         el.root.style.setProperty("--glow", "0");
 
@@ -1129,7 +1097,7 @@
           cancelAnimationFrame(rafId);
           stopSuspense();
           state.drawing = false;
-          el.countdown.classList.remove("show");
+
           el.root.style.setProperty("--glow", "0");
           el.root.style.setProperty("--ring-speed", "6s");
         }
@@ -1150,7 +1118,7 @@
           cancelAnimationFrame(rafId);
           stopSuspense();
           state.drawing = false;
-          el.countdown.classList.remove("show");
+
           el.root.style.setProperty("--glow", "0");
           el.root.style.setProperty("--ring-speed", "6s");
         }
