@@ -1,0 +1,1176 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Undian — Nomor Keberuntungan</title>
+    <style>
+      :root {
+        --ink: #08080f;
+        --ink-2: #15162a;
+        --panel: rgba(23, 24, 42, 0.78);
+        --panel-line: rgba(255, 255, 255, 0.08);
+        --gold: #ffd23f;
+        --gold-soft: #ffe89a;
+        --magenta: #ff3d77;
+        --teal: #36e3c9;
+        --text: #f6f4ee;
+        --muted: #9a9ab4;
+        --ring-speed: 6s;
+        --glow: 0;
+        font-synthesis: none;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(
+            900px 700px at 12% -10%,
+            rgba(255, 210, 63, 0.1),
+            transparent 60%
+          ),
+          radial-gradient(
+            900px 800px at 110% 120%,
+            rgba(255, 61, 119, 0.12),
+            transparent 55%
+          ),
+          radial-gradient(120% 120% at 50% 35%, var(--ink-2), var(--ink) 70%);
+        background-attachment: fixed;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+      }
+
+      /* ---------- Top bar ---------- */
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 18px clamp(16px, 4vw, 40px);
+      }
+      .brand {
+        display: flex;
+        flex-direction: column;
+        line-height: 1;
+      }
+      .brand .eyebrow {
+        font-size: 11px;
+        letter-spacing: 0.42em;
+        text-transform: uppercase;
+        color: var(--gold);
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .brand h1 {
+        font-size: clamp(20px, 3.4vw, 30px);
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+      .brand h1 span {
+        color: var(--magenta);
+      }
+
+      .top-actions {
+        display: flex;
+        gap: 10px;
+      }
+      .icon-btn {
+        width: 46px;
+        height: 46px;
+        display: grid;
+        place-items: center;
+        border-radius: 14px;
+        border: 1px solid var(--panel-line);
+        background: var(--panel);
+        color: var(--text);
+        cursor: pointer;
+        transition:
+          transform 0.12s ease,
+          border-color 0.2s ease,
+          background 0.2s ease;
+      }
+      .icon-btn:hover {
+        border-color: rgba(255, 210, 63, 0.5);
+      }
+      .icon-btn:active {
+        transform: scale(0.94);
+      }
+      .icon-btn:focus-visible {
+        outline: 3px solid var(--teal);
+        outline-offset: 2px;
+      }
+      .icon-btn svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      /* ---------- Stage ---------- */
+      main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 8px clamp(16px, 4vw, 40px) 0;
+        text-align: center;
+      }
+
+      .stage-wrap {
+        position: relative;
+        width: min(78vw, 360px);
+        aspect-ratio: 1/1;
+        margin: clamp(6px, 2vw, 18px) auto;
+        display: grid;
+        place-items: center;
+      }
+      /* rotating tension ring */
+      .ring {
+        position: absolute;
+        inset: -6%;
+        border-radius: 30%;
+        background: conic-gradient(
+          from 0deg,
+          var(--gold),
+          var(--magenta),
+          var(--teal),
+          var(--gold)
+        );
+        filter: blur(2px);
+        opacity: calc(0.35 + var(--glow) * 0.55);
+        animation: spin var(--ring-speed) linear infinite;
+        -webkit-mask: radial-gradient(
+          circle at center,
+          transparent 60%,
+          #000 61%
+        );
+        mask: radial-gradient(circle at center, transparent 60%, #000 61%);
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .halo {
+        position: absolute;
+        inset: 8%;
+        border-radius: 28%;
+        background: radial-gradient(
+          circle at 50% 40%,
+          rgba(255, 210, 63, 0.25),
+          transparent 70%
+        );
+        opacity: calc(0.25 + var(--glow));
+        transition: opacity 0.25s ease;
+      }
+
+      .stage {
+        position: relative;
+        width: 86%;
+        height: 86%;
+        border-radius: 26%;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(
+          160deg,
+          rgba(31, 32, 56, 0.95),
+          rgba(12, 12, 22, 0.95)
+        );
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.08),
+          0 30px 80px rgba(0, 0, 0, 0.55),
+          0 0 calc(20px + var(--glow) * 60px)
+            rgba(255, 210, 63, calc(0.15 + var(--glow) * 0.4));
+        transition:
+          box-shadow 0.2s ease,
+          transform 0.15s ease;
+      }
+      .stage.win {
+        animation: pop 0.55s ease;
+        background: linear-gradient(
+          160deg,
+          rgba(60, 48, 18, 0.95),
+          rgba(40, 16, 28, 0.95)
+        );
+      }
+      @keyframes pop {
+        0% {
+          transform: scale(1);
+        }
+        35% {
+          transform: scale(1.07);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .number {
+        font-size: clamp(64px, 21vw, 150px);
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+        color: var(--gold-soft);
+        text-shadow: 0 0 calc(8px + var(--glow) * 30px) rgba(255, 210, 63, 0.6);
+      }
+      .number.dash {
+        color: var(--muted);
+        text-shadow: none;
+        font-weight: 700;
+      }
+
+      .stage-label {
+        position: absolute;
+        bottom: 11%;
+        font-size: 11px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      /* countdown badge */
+      .countdown {
+        position: absolute;
+        top: -6px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 7px 16px;
+        border-radius: 999px;
+        background: rgba(54, 227, 201, 0.14);
+        border: 1px solid rgba(54, 227, 201, 0.5);
+        color: var(--teal);
+        font-weight: 700;
+        font-size: 14px;
+        letter-spacing: 0.06em;
+        font-variant-numeric: tabular-nums;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        pointer-events: none;
+        white-space: nowrap;
+      }
+      .countdown.show {
+        opacity: 1;
+      }
+
+      .status {
+        color: var(--muted);
+        font-size: 15px;
+        min-height: 22px;
+        margin-top: 6px;
+        max-width: 420px;
+      }
+      .status.done {
+        color: var(--magenta);
+        font-weight: 700;
+      }
+
+      /* ---------- Controls ---------- */
+      .controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+        max-width: 480px;
+        margin-top: clamp(10px, 2.5vw, 20px);
+      }
+      .start-btn {
+        width: 100%;
+        padding: 20px 28px;
+        border: none;
+        border-radius: 18px;
+        font-size: clamp(18px, 4.5vw, 22px);
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #1a1206;
+        cursor: pointer;
+        background: linear-gradient(135deg, var(--gold), #ffb43f);
+        box-shadow:
+          0 14px 36px rgba(255, 180, 63, 0.32),
+          inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        transition:
+          transform 0.12s ease,
+          filter 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+      .start-btn:hover {
+        filter: brightness(1.05);
+      }
+      .start-btn:active {
+        transform: translateY(2px) scale(0.99);
+      }
+      .start-btn:focus-visible {
+        outline: 3px solid var(--teal);
+        outline-offset: 3px;
+      }
+      .start-btn:disabled {
+        cursor: not-allowed;
+        filter: grayscale(0.6) brightness(0.7);
+        box-shadow: none;
+      }
+
+      .reset-btn {
+        background: transparent;
+        border: 1px solid var(--panel-line);
+        color: var(--muted);
+        padding: 11px 22px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          color 0.2s ease,
+          border-color 0.2s ease;
+      }
+      .reset-btn:hover {
+        color: var(--text);
+        border-color: rgba(255, 61, 119, 0.5);
+      }
+      .reset-btn:focus-visible {
+        outline: 3px solid var(--teal);
+        outline-offset: 2px;
+      }
+
+      /* ---------- Winners ---------- */
+      .winners {
+        width: 100%;
+        max-width: 760px;
+        margin: clamp(20px, 4vw, 36px) auto clamp(28px, 5vw, 48px);
+        padding: 0 clamp(16px, 4vw, 40px);
+      }
+      .winners-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        border-top: 1px solid var(--panel-line);
+        padding-top: 18px;
+        margin-bottom: 16px;
+      }
+      .winners-head h2 {
+        font-size: 13px;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--gold);
+        font-weight: 700;
+      }
+      .winners-head .count {
+        color: var(--muted);
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .winners-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+        gap: 10px;
+      }
+      .chip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 13px;
+        border-radius: 13px;
+        background: var(--panel);
+        border: 1px solid var(--panel-line);
+        animation: fadeUp 0.4s ease;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .chip .rank {
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .chip .num {
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--gold-soft);
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+        margin-top: 3px;
+      }
+      .chip .seat {
+        width: 30px;
+        height: 30px;
+        flex: none;
+        display: grid;
+        place-items: center;
+        border-radius: 9px;
+        background: rgba(255, 61, 119, 0.16);
+        color: var(--magenta);
+        font-size: 12px;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+      }
+      .winners-empty {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      /* ---------- Settings modal ---------- */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(4, 4, 10, 0.72);
+        backdrop-filter: blur(6px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        z-index: 50;
+      }
+      .overlay.show {
+        display: flex;
+      }
+      .modal {
+        width: 100%;
+        max-width: 420px;
+        background: linear-gradient(160deg, #1b1c30, #121120);
+        border: 1px solid var(--panel-line);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
+        animation: fadeUp 0.25s ease;
+      }
+      .modal h3 {
+        font-size: 18px;
+        font-weight: 800;
+        margin-bottom: 4px;
+      }
+      .modal .sub {
+        color: var(--muted);
+        font-size: 13px;
+        margin-bottom: 20px;
+      }
+      .field {
+        margin-bottom: 16px;
+      }
+      .field label {
+        display: block;
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 7px;
+      }
+      .field input {
+        width: 100%;
+        padding: 13px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--panel-line);
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--text);
+        font-size: 16px;
+        font-variant-numeric: tabular-nums;
+      }
+      .field input:focus {
+        outline: none;
+        border-color: var(--teal);
+      }
+      .err {
+        color: var(--magenta);
+        font-size: 13px;
+        min-height: 18px;
+        margin-bottom: 12px;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+      .btn-ghost,
+      .btn-solid {
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .btn-ghost {
+        background: transparent;
+        border: 1px solid var(--panel-line);
+        color: var(--muted);
+      }
+      .btn-ghost:hover {
+        color: var(--text);
+      }
+      .btn-solid {
+        background: linear-gradient(135deg, var(--gold), #ffb43f);
+        border: none;
+        color: #1a1206;
+      }
+      .btn-solid:active {
+        transform: translateY(1px);
+      }
+      .btn-ghost:focus-visible,
+      .btn-solid:focus-visible {
+        outline: 3px solid var(--teal);
+        outline-offset: 2px;
+      }
+
+      /* confetti */
+      .confetti {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 40;
+        overflow: hidden;
+      }
+      .confetti i {
+        position: absolute;
+        top: -14px;
+        width: 9px;
+        height: 14px;
+        border-radius: 2px;
+        animation: fall linear forwards;
+      }
+      @keyframes fall {
+        to {
+          transform: translateY(105vh) rotate(720deg);
+          opacity: 0.9;
+        }
+      }
+
+      @media (max-width: 430px) {
+        .winners-grid {
+          grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .ring {
+          animation: none;
+        }
+        .stage.win {
+          animation: none;
+        }
+        .chip {
+          animation: none;
+        }
+        .confetti {
+          display: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand">
+        <span class="eyebrow">Nomor Keberuntungan</span>
+        <h1>UNDIAN<span>.</span></h1>
+      </div>
+      <div class="top-actions">
+        <button
+          class="icon-btn"
+          id="muteBtn"
+          aria-label="Bisukan suara"
+          title="Bisukan / aktifkan suara"
+        >
+          <!-- sound icon swapped in JS -->
+        </button>
+        <button
+          class="icon-btn"
+          id="settingsBtn"
+          aria-label="Buka pengaturan"
+          title="Pengaturan"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+            />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <div class="stage-wrap">
+        <div class="ring" aria-hidden="true"></div>
+        <div class="halo" aria-hidden="true"></div>
+        <div class="countdown" id="countdown" aria-hidden="true"></div>
+        <div class="stage" id="stage">
+          <div class="number dash" id="number" aria-live="polite">—</div>
+          <div class="stage-label" id="stageLabel">Siap diundi</div>
+        </div>
+      </div>
+
+      <p class="status" id="status">Tekan tombol untuk mulai mengundi.</p>
+
+      <div class="controls">
+        <button class="start-btn" id="startBtn">Mulai Undian</button>
+        <button class="reset-btn" id="resetBtn">Reset daftar pemenang</button>
+      </div>
+    </main>
+
+    <section class="winners">
+      <div class="winners-head">
+        <h2>Daftar Pemenang</h2>
+        <span class="count" id="winCount">0 nomor</span>
+      </div>
+      <div class="winners-grid" id="winnersGrid">
+        <p class="winners-empty">Belum ada pemenang.</p>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <div class="overlay" id="overlay">
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modalTitle"
+      >
+        <h3 id="modalTitle">Pengaturan</h3>
+        <p class="sub">Menyimpan akan mengosongkan daftar pemenang.</p>
+        <div class="field">
+          <label for="minInput">Angka minimum</label>
+          <input type="number" id="minInput" inputmode="numeric" />
+        </div>
+        <div class="field">
+          <label for="maxInput">Angka maksimum</label>
+          <input type="number" id="maxInput" inputmode="numeric" />
+        </div>
+        <div class="field">
+          <label for="durInput">Durasi animasi (detik)</label>
+          <input
+            type="number"
+            id="durInput"
+            inputmode="decimal"
+            step="1"
+            min="1"
+          />
+        </div>
+        <p class="err" id="settingsErr"></p>
+        <div class="modal-actions">
+          <button class="btn-ghost" id="cancelSettings">Batal</button>
+          <button class="btn-solid" id="saveSettings">Simpan</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="confetti" id="confetti" aria-hidden="true"></div>
+
+    <script>
+      /* =========================================================
+   STATE  (semua di variabel JS — tidak ada localStorage)
+   ========================================================= */
+      const state = {
+        min: 1,
+        max: 133,
+        durationSec: 15,
+        available: [], // angka yang belum keluar
+        winners: [], // angka pemenang berurutan
+        drawing: false,
+        muted: false,
+      };
+
+      /* ---------- Elements ---------- */
+      const el = {
+        number: document.getElementById("number"),
+        stage: document.getElementById("stage"),
+        stageLabel: document.getElementById("stageLabel"),
+        countdown: document.getElementById("countdown"),
+        status: document.getElementById("status"),
+        startBtn: document.getElementById("startBtn"),
+        resetBtn: document.getElementById("resetBtn"),
+        winnersGrid: document.getElementById("winnersGrid"),
+        winCount: document.getElementById("winCount"),
+        overlay: document.getElementById("overlay"),
+        settingsBtn: document.getElementById("settingsBtn"),
+        muteBtn: document.getElementById("muteBtn"),
+        minInput: document.getElementById("minInput"),
+        maxInput: document.getElementById("maxInput"),
+        durInput: document.getElementById("durInput"),
+        settingsErr: document.getElementById("settingsErr"),
+        saveSettings: document.getElementById("saveSettings"),
+        cancelSettings: document.getElementById("cancelSettings"),
+        confetti: document.getElementById("confetti"),
+        root: document.documentElement,
+      };
+
+      const prefersReduced = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+
+      /* =========================================================
+   POOL / RESET
+   ========================================================= */
+      function buildPool() {
+        state.available = [];
+        for (let n = state.min; n <= state.max; n++) state.available.push(n);
+      }
+      function resetAll() {
+        buildPool();
+        state.winners = [];
+        el.number.textContent = "—";
+        el.number.classList.add("dash");
+        el.stage.classList.remove("win");
+        el.stageLabel.textContent = "Siap diundi";
+        setStatus("Tekan tombol untuk mulai mengundi.", false);
+        renderWinners();
+        updateStartState();
+      }
+
+      /* =========================================================
+   RENDER
+   ========================================================= */
+      function renderWinners() {
+        el.winCount.textContent = state.winners.length + " nomor";
+        if (state.winners.length === 0) {
+          el.winnersGrid.innerHTML =
+            '<p class="winners-empty">Belum ada pemenang.</p>';
+          return;
+        }
+        el.winnersGrid.innerHTML = "";
+        state.winners.forEach((num, i) => {
+          const chip = document.createElement("div");
+          chip.className = "chip";
+          chip.innerHTML =
+            '<span class="seat">' +
+            (i + 1) +
+            "</span>" +
+            '<span><span class="rank">Pemenang ' +
+            (i + 1) +
+            "</span>" +
+            '<div class="num">' +
+            num +
+            "</div></span>";
+          el.winnersGrid.appendChild(chip);
+        });
+      }
+
+      function setStatus(msg, done) {
+        el.status.textContent = msg;
+        el.status.classList.toggle("done", !!done);
+      }
+
+      function updateStartState() {
+        const empty = state.available.length === 0;
+        el.startBtn.disabled = empty || state.drawing;
+        if (empty && !state.drawing) {
+          el.startBtn.textContent = "Selesai";
+          setStatus("Semua nomor sudah terundi.", true);
+          el.stageLabel.textContent = "Selesai";
+        } else if (!state.drawing) {
+          el.startBtn.textContent = "Mulai Undian";
+        }
+      }
+
+      /* =========================================================
+   DRAW
+   ========================================================= */
+      let rafId = null;
+
+      function startDraw() {
+        if (state.drawing || state.available.length === 0) return;
+
+        ensureAudio(); // dibuat/di-resume di dalam gesture klik
+        state.drawing = true;
+        el.startBtn.disabled = true;
+        el.startBtn.textContent = "Mengundi…";
+        el.stage.classList.remove("win");
+        el.number.classList.remove("dash");
+        el.stageLabel.textContent = "Mengundi";
+        setStatus("Bersiap… siapa yang beruntung?", false);
+        el.countdown.classList.add("show");
+
+        // tentukan pemenang lebih dulu dari kolam yang tersisa
+        const winIdx = Math.floor(Math.random() * state.available.length);
+        const winner = state.available[winIdx];
+
+        const durationMs = state.durationSec * 1000;
+        const start = performance.now();
+        let lastFlip = 0;
+
+        startSuspense(durationMs);
+
+        function frame(now) {
+          const elapsed = now - start;
+          const progress = Math.min(elapsed / durationMs, 1);
+
+          // ring berputar makin cepat & glow makin kuat menjelang akhir
+          const ringSpeed = (6 - progress * 5.4).toFixed(2); // 6s -> 0.6s
+          el.root.style.setProperty("--ring-speed", ringSpeed + "s");
+          el.root.style.setProperty(
+            "--glow",
+            (prefersReduced ? progress * 0.4 : progress).toFixed(3),
+          );
+
+          // countdown kecil
+          const remain = Math.max(0, Math.ceil((durationMs - elapsed) / 1000));
+          el.countdown.textContent = remain + " dtk";
+
+          // interval flip: cepat di awal (45ms), melambat di akhir (220ms) untuk efek "mendarat"
+          const flipInterval = 45 + progress * progress * 175;
+          if (now - lastFlip >= flipInterval) {
+            el.number.textContent = randomDisplay();
+            lastFlip = now;
+          }
+
+          if (elapsed < durationMs) {
+            rafId = requestAnimationFrame(frame);
+          } else {
+            finishDraw(winner, winIdx);
+          }
+        }
+        rafId = requestAnimationFrame(frame);
+      }
+
+      function randomDisplay() {
+        // angka acak dari seluruh rentang, hanya untuk pertunjukan
+        return (
+          Math.floor(Math.random() * (state.max - state.min + 1)) + state.min
+        );
+      }
+
+      function finishDraw(winner, winIdx) {
+        cancelAnimationFrame(rafId);
+        stopSuspense();
+
+        // kunci angka pemenang
+        el.number.textContent = winner;
+        state.available.splice(winIdx, 1);
+        state.winners.push(winner);
+
+        el.stage.classList.add("win");
+        el.stageLabel.textContent = "Pemenang";
+        el.countdown.classList.remove("show");
+        el.root.style.setProperty("--ring-speed", "6s");
+        el.root.style.setProperty("--glow", "0");
+
+        state.drawing = false;
+        setStatus(
+          "Pemenang " + state.winners.length + ": nomor " + winner + "!",
+          false,
+        );
+        renderWinners();
+        updateStartState();
+
+        playWinDing();
+        burstConfetti();
+      }
+
+      /* =========================================================
+   CONFETTI (tanpa library)
+   ========================================================= */
+      function burstConfetti() {
+        if (prefersReduced) return;
+        const colors = ["#ffd23f", "#ff3d77", "#36e3c9", "#ffe89a", "#ff8a3d"];
+        const frag = document.createDocumentFragment();
+        const count = 90;
+        for (let i = 0; i < count; i++) {
+          const bit = document.createElement("i");
+          bit.style.left = Math.random() * 100 + "vw";
+          bit.style.background = colors[i % colors.length];
+          const dur = 1.6 + Math.random() * 1.6;
+          bit.style.animationDuration = dur + "s";
+          bit.style.animationDelay = Math.random() * 0.3 + "s";
+          bit.style.transform =
+            "translateY(0) rotate(" + Math.random() * 360 + "deg)";
+          bit.style.opacity = "0.95";
+          frag.appendChild(bit);
+          setTimeout(() => bit.remove(), (dur + 0.6) * 1000);
+        }
+        el.confetti.appendChild(frag);
+      }
+
+      /* =========================================================
+   AUDIO — Web Audio API (suspense + ding kemenangan)
+   ========================================================= */
+      let actx = null;
+      let masterGain = null;
+      let suspense = null; // { drone, drone2, filter, gain, pulseTimer }
+      let pulseStart = 0;
+      let pulseDuration = 0;
+
+      function ensureAudio() {
+        if (!actx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          actx = new AC();
+          masterGain = actx.createGain();
+          masterGain.gain.value = state.muted ? 0 : 1;
+          masterGain.connect(actx.destination);
+        }
+        if (actx.state === "suspended") actx.resume();
+      }
+
+      function startSuspense(durationMs) {
+        if (!actx) return;
+        const t0 = actx.currentTime;
+
+        const drone = actx.createOscillator();
+        const drone2 = actx.createOscillator();
+        const filter = actx.createBiquadFilter();
+        const gain = actx.createGain();
+
+        drone.type = "sawtooth";
+        drone2.type = "sawtooth";
+        drone.frequency.setValueAtTime(55, t0);
+        drone2.frequency.setValueAtTime(55, t0);
+        drone2.detune.value = 8;
+
+        // nada drone naik perlahan -> makin menegangkan
+        const endT = t0 + durationMs / 1000;
+        drone.frequency.linearRampToValueAtTime(116, endT);
+        drone2.frequency.linearRampToValueAtTime(116, endT);
+
+        filter.type = "lowpass";
+        filter.frequency.setValueAtTime(320, t0);
+        filter.frequency.linearRampToValueAtTime(1500, endT);
+        filter.Q.value = 6;
+
+        gain.gain.setValueAtTime(0, t0);
+        gain.gain.linearRampToValueAtTime(0.1, t0 + 0.4);
+
+        drone.connect(filter);
+        drone2.connect(filter);
+        filter.connect(gain);
+        gain.connect(masterGain);
+        drone.start();
+        drone2.start();
+
+        suspense = { drone, drone2, filter, gain, pulseTimer: null };
+        pulseStart = performance.now();
+        pulseDuration = durationMs;
+        schedulePulse();
+      }
+
+      function schedulePulse() {
+        if (!suspense || !actx) return;
+        const progress = Math.min(
+          (performance.now() - pulseStart) / pulseDuration,
+          1,
+        );
+        playBlip(progress);
+        // tempo naik: 300ms -> 70ms
+        const interval = 300 - progress * 230;
+        suspense.pulseTimer = setTimeout(schedulePulse, interval);
+      }
+
+      function playBlip(progress) {
+        if (!actx) return;
+        const t = actx.currentTime;
+        const osc = actx.createOscillator();
+        const g = actx.createGain();
+        osc.type = "triangle";
+        // nada blip naik bersama progress
+        const freq = 200 + progress * 760 + (Math.random() * 40 - 20);
+        osc.frequency.setValueAtTime(freq, t);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.18, t + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+        osc.connect(g);
+        g.connect(masterGain);
+        osc.start(t);
+        osc.stop(t + 0.2);
+      }
+
+      function stopSuspense() {
+        if (!suspense || !actx) return;
+        clearTimeout(suspense.pulseTimer);
+        const t = actx.currentTime;
+        try {
+          suspense.gain.gain.cancelScheduledValues(t);
+          suspense.gain.gain.setValueAtTime(suspense.gain.gain.value, t);
+          suspense.gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+          suspense.drone.stop(t + 0.15);
+          suspense.drone2.stop(t + 0.15);
+        } catch (e) {
+          /* ignore */
+        }
+        suspense = null;
+      }
+
+      function playWinDing() {
+        if (!actx) return;
+        const base = actx.currentTime + 0.04;
+        const notes = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
+        notes.forEach((f, i) => {
+          const t = base + i * 0.085;
+          const osc = actx.createOscillator();
+          const g = actx.createGain();
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(f, t);
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(0.22, t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
+          osc.connect(g);
+          g.connect(masterGain);
+          osc.start(t);
+          osc.stop(t + 1.05);
+        });
+        // sparkle tinggi
+        const t = base + 0.34;
+        const sh = actx.createOscillator();
+        const sg = actx.createGain();
+        sh.type = "sine";
+        sh.frequency.setValueAtTime(1567.98, t); // G6
+        sg.gain.setValueAtTime(0.0001, t);
+        sg.gain.exponentialRampToValueAtTime(0.12, t + 0.02);
+        sg.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+        sh.connect(sg);
+        sg.connect(masterGain);
+        sh.start(t);
+        sh.stop(t + 1.25);
+      }
+
+      /* =========================================================
+   MUTE
+   ========================================================= */
+      const ICON_SOUND_ON =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>' +
+        '<path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
+      const ICON_SOUND_OFF =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>' +
+        '<line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
+
+      function renderMute() {
+        el.muteBtn.innerHTML = state.muted ? ICON_SOUND_OFF : ICON_SOUND_ON;
+        el.muteBtn.setAttribute(
+          "aria-label",
+          state.muted ? "Aktifkan suara" : "Bisukan suara",
+        );
+      }
+      function toggleMute() {
+        state.muted = !state.muted;
+        ensureAudio(); // gesture: aman untuk membuat/men-resume context
+        if (masterGain && actx) {
+          masterGain.gain.setTargetAtTime(
+            state.muted ? 0 : 1,
+            actx.currentTime,
+            0.02,
+          );
+        }
+        renderMute();
+      }
+
+      /* =========================================================
+   SETTINGS
+   ========================================================= */
+      function openSettings() {
+        el.minInput.value = state.min;
+        el.maxInput.value = state.max;
+        el.durInput.value = state.durationSec;
+        el.settingsErr.textContent = "";
+        el.overlay.classList.add("show");
+        el.minInput.focus();
+      }
+      function closeSettings() {
+        el.overlay.classList.remove("show");
+      }
+
+      function saveSettings() {
+        const min = parseInt(el.minInput.value, 10);
+        const max = parseInt(el.maxInput.value, 10);
+        const dur = parseFloat(el.durInput.value);
+
+        if (!Number.isFinite(min) || !Number.isFinite(max)) {
+          el.settingsErr.textContent =
+            "Angka minimum dan maksimum harus diisi.";
+          return;
+        }
+        if (max <= min) {
+          el.settingsErr.textContent =
+            "Angka maksimum harus lebih besar dari minimum.";
+          return;
+        }
+        if (!Number.isFinite(dur) || dur <= 0) {
+          el.settingsErr.textContent = "Durasi harus lebih besar dari 0 detik.";
+          return;
+        }
+
+        // jika sedang mengundi, hentikan dulu
+        if (state.drawing) {
+          cancelAnimationFrame(rafId);
+          stopSuspense();
+          state.drawing = false;
+          el.countdown.classList.remove("show");
+          el.root.style.setProperty("--glow", "0");
+          el.root.style.setProperty("--ring-speed", "6s");
+        }
+
+        state.min = min;
+        state.max = max;
+        state.durationSec = dur;
+        closeSettings();
+        resetAll(); // simpan -> daftar pemenang ikut di-reset
+      }
+
+      /* =========================================================
+   EVENTS
+   ========================================================= */
+      el.startBtn.addEventListener("click", startDraw);
+      el.resetBtn.addEventListener("click", () => {
+        if (state.drawing) {
+          cancelAnimationFrame(rafId);
+          stopSuspense();
+          state.drawing = false;
+          el.countdown.classList.remove("show");
+          el.root.style.setProperty("--glow", "0");
+          el.root.style.setProperty("--ring-speed", "6s");
+        }
+        resetAll();
+      });
+      el.settingsBtn.addEventListener("click", openSettings);
+      el.cancelSettings.addEventListener("click", closeSettings);
+      el.saveSettings.addEventListener("click", saveSettings);
+      el.overlay.addEventListener("click", (e) => {
+        if (e.target === el.overlay) closeSettings();
+      });
+      el.muteBtn.addEventListener("click", toggleMute);
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && el.overlay.classList.contains("show"))
+          closeSettings();
+      });
+
+      /* ---------- Init ---------- */
+      renderMute();
+      resetAll();
+    </script>
+  </body>
+</html>
