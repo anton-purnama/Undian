@@ -141,7 +141,7 @@
 
       .stage-wrap {
         position: relative;
-        width: min(78vw, 360px);
+        width: min(78vw, 55vh);
         aspect-ratio: 1/1;
         margin: clamp(6px, 2vw, 18px) auto;
         display: grid;
@@ -231,7 +231,7 @@
       }
 
       .number {
-        font-size: clamp(64px, 21vw, 150px);
+        font-size: clamp(36px, min(18.7vw, 13.3vh), 280px);
         font-weight: 800;
         letter-spacing: -0.03em;
         font-variant-numeric: tabular-nums;
@@ -259,7 +259,7 @@
         font-size: 15px;
         min-height: 22px;
         margin-top: 6px;
-        max-width: 420px;
+        max-width: min(90vw, 520px);
       }
       .status.done {
         color: var(--magenta);
@@ -273,7 +273,7 @@
         align-items: center;
         gap: 14px;
         width: 100%;
-        max-width: 480px;
+        max-width: min(90vw, 600px);
         margin-top: clamp(10px, 2.5vw, 20px);
       }
       .start-btn {
@@ -337,7 +337,7 @@
       /* ---------- Winners ---------- */
       .winners {
         width: 100%;
-        max-width: 760px;
+        max-width: min(90vw, 1200px);
         margin: clamp(20px, 4vw, 36px) auto clamp(28px, 5vw, 48px);
         padding: 0 clamp(16px, 4vw, 40px);
       }
@@ -781,6 +781,7 @@
         setStatus("Tekan tombol untuk mulai mengundi.", false);
         renderWinners();
         updateStartState();
+        updateNumberFontSize();
       }
 
       /* =========================================================
@@ -814,6 +815,13 @@
       function setStatus(msg, done) {
         el.status.textContent = msg;
         el.status.classList.toggle("done", !!done);
+      }
+
+      function updateNumberFontSize() {
+        const d = String(state.max).length;
+        const vw = (56 / d).toFixed(1);
+        const vh = (40 / d).toFixed(1);
+        el.number.style.fontSize = `clamp(36px, min(${vw}vw, ${vh}vh), 280px)`;
       }
 
       function updateStartState() {
